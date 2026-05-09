@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>週間夕食メニュープランナー</title>
+<style>
+:root{--primary:#E8834C;--primary-light:#F5A87A;--recolte:#5BAD8F;--recolte-dark:#429E78;--recolte-bg:#EDF9F5;--bg:#FDF8F3;--surface:#FFFFFF;--text:#2C1810;--muted:#7A6860;--border:#EDE5DC;--shadow:rgba(44,24,16,0.08);--main-color:#E8834C;--side-color:#4A9FBF;--soup-color:#9B7EC8;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Hiragino Kaku Gothic ProN','Hiragino Sans','Noto Sans JP',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;line-height:1.6}
+header{background:linear-gradient(135deg,#E8834C 0%,#C4612A 100%);color:#fff;padding:2rem 1rem;text-align:center}
+header h1{font-size:1.75rem;font-weight:700;margin-bottom:.35rem}
+header p{opacity:.9;font-size:.92rem}
+.wrap{max-width:980px;margin:0 auto;padding:1.5rem 1rem}
+.card{background:var(--surface);border-radius:16px;padding:1.5rem;margin-bottom:1.5rem;box-shadow:0 2px 12px var(--shadow)}
+.sec-title{display:flex;align-items:center;gap:.5rem;font-size:1.05rem;font-weight:700;color:var(--primary);margin-bottom:1.1rem}
+.badge-num{background:var(--primary);color:#fff;width:27px;height:27px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.82rem;font-weight:700;flex-shrink:0}
+.btn{border:none;border-radius:10px;padding:.55rem 1.1rem;font-family:inherit;font-size:.88rem;font-weight:700;cursor:pointer;transition:all .2s}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-primary:hover{background:#C4612A;transform:translateY(-1px)}
+.btn-outline{background:transparent;border:2px solid var(--border);color:var(--muted)}
+.btn-outline:hover{border-color:var(--primary);color:var(--primary)}
+.cat-row{display:flex;flex-wrap:wrap;gap:.38rem;margin-bottom:.75rem}
+.cat-btn{border:1.5px solid var(--border);border-radius:20px;padding:.3rem .75rem;font-size:.8rem;font-family:inherit;cursor:pointer;background:var(--bg);color:var(--muted);transition:all .15s}
+.cat-btn.active,.cat-btn:hover{background:#FFF0E8;border-color:var(--primary);color:var(--primary)}
+.quick-wrap{display:flex;flex-wrap:wrap;gap:.32rem;padding:.8rem;background:var(--bg);border-radius:10px;margin-bottom:.9rem;min-height:48px}
+.qi{border:1.5px solid var(--border);border-radius:20px;padding:.2rem .6rem;font-size:.78rem;font-family:inherit;cursor:pointer;background:#fff;color:var(--text);transition:all .12s}
+.qi:hover{background:var(--primary);border-color:var(--primary);color:#fff}
+.qi.added{background:#FFF0E8;border-color:var(--primary-light);color:var(--primary);font-weight:700}
+.inp-row{display:flex;gap:.5rem;margin-bottom:.9rem}
+input[type=text]{flex:1;border:2px solid var(--border);border-radius:10px;padding:.55rem .9rem;font-size:.95rem;font-family:inherit;outline:none;background:var(--bg);transition:border-color .2s}
+input[type=text]:focus{border-color:var(--primary);background:#fff}
+.ing-list{display:flex;flex-wrap:wrap;gap:.4rem;min-height:36px;margin-bottom:.75rem}
+.ing-tag{display:flex;align-items:center;gap:.22rem;background:#FFF0E8;border:1.5px solid var(--primary-light);border-radius:20px;padding:.25rem .65rem;font-size:.85rem;color:var(--primary)}
+.ing-tag .x{cursor:pointer;font-size:1.05rem;opacity:.55;margin-left:2px;line-height:1}
+.ing-tag .x:hover{opacity:1}
+.empty-state{color:var(--muted);font-size:.85rem;padding:.3rem 0}
+.rc-info{display:flex;align-items:flex-start;gap:.75rem;background:var(--recolte-bg);border:1.5px solid #A8D8C8;border-radius:12px;padding:.9rem;margin-bottom:1rem}
+.rc-info p{font-size:.86rem;color:#2D6B55;line-height:1.55}
+.gen-btn{width:100%;padding:.95rem;font-size:1.05rem;border-radius:14px;display:flex;align-items:center;justify-content:center;gap:.5rem}
+.stats{display:flex;flex-wrap:wrap;gap:1.5rem;padding:1rem 1.5rem;background:var(--surface);border-radius:12px;margin-bottom:1.5rem;box-shadow:0 2px 8px var(--shadow)}
+.stat .val{font-size:1.5rem;font-weight:700;color:var(--primary)}
+.stat .lbl{font-size:.75rem;color:var(--muted)}
+.week-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:1rem}
+.day-card{background:var(--surface);border-radius:16px;overflow:hidden;box-shadow:0 2px 12px var(--shadow);transition:transform .2s,box-shadow .2s;animation:fadeUp .35s ease both}
+.day-card:hover{transform:translateY(-2px);box-shadow:0 6px 20px var(--shadow)}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.day-card:nth-child(1){animation-delay:.05s}.day-card:nth-child(2){animation-delay:.10s}.day-card:nth-child(3){animation-delay:.15s}.day-card:nth-child(4){animation-delay:.20s}.day-card:nth-child(5){animation-delay:.25s}.day-card:nth-child(6){animation-delay:.30s}.day-card:nth-child(7){animation-delay:.35s}
+.day-hdr{padding:.75rem 1rem;display:flex;align-items:center;justify-content:space-between;color:#fff}
+.day-hdr.rc{background:linear-gradient(135deg,var(--recolte),var(--recolte-dark))}
+.day-hdr.rg{background:linear-gradient(135deg,var(--primary),#C4612A)}
+.day-name{font-size:1rem;font-weight:700}
+.day-badge{font-size:.7rem;padding:.16rem .5rem;border-radius:20px;background:rgba(255,255,255,.28);font-weight:700;white-space:nowrap}
+.dish-list{padding:.85rem 1rem}
+.dish-row{display:flex;align-items:center;gap:.5rem;padding:.45rem 0;border-bottom:1px solid var(--border)}
+.dish-row:last-child{border-bottom:none}
+.dish-cat{font-size:.68rem;font-weight:700;padding:.15rem .45rem;border-radius:6px;white-space:nowrap;flex-shrink:0;min-width:38px;text-align:center}
+.dish-cat.main{background:#FFF0E8;color:var(--main-color)}
+.dish-cat.side{background:#E8F4FB;color:var(--side-color)}
+.dish-cat.soup{background:#F3EEF9;color:var(--soup-color)}
+.dish-name-wrap{flex:1;min-width:0}
+.dish-name{font-size:.88rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dish-sub{font-size:.72rem;color:var(--muted)}
+.rc-icon{font-size:.75rem;background:var(--recolte-bg);color:var(--recolte);border:1px solid #A8D8C8;border-radius:8px;padding:.1rem .3rem;white-space:nowrap;flex-shrink:0}
+.nutr-bar{padding:.6rem 1rem .5rem;border-top:1px solid var(--border)}
+.nutr-row{display:flex;align-items:center;gap:.5rem;margin-bottom:.3rem}
+.nutr-label{font-size:.68rem;color:var(--muted);width:52px;flex-shrink:0}
+.nutr-track{flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden}
+.nutr-fill{height:100%;border-radius:3px;transition:width .4s}
+.nutr-fill.ok{background:#5BAD8F}
+.nutr-fill.over{background:#E8834C}
+.nutr-fill.low{background:#9B7EC8}
+.nutr-val{font-size:.68rem;font-weight:700;width:44px;text-align:right;flex-shrink:0}
+.used-wrap{padding:.5rem 1rem .7rem;display:flex;flex-wrap:wrap;gap:.25rem}
+.used-tag{font-size:.7rem;padding:.1rem .4rem;border-radius:8px;background:#FFF0E8;color:var(--primary);border:1px solid var(--primary-light)}
+.expand-btn{width:100%;padding:.45rem;font-size:.82rem;border-radius:0 0 14px 14px;background:var(--bg);border:none;border-top:1.5px solid var(--border);color:var(--muted);cursor:pointer;font-family:inherit;transition:all .18s}
+.expand-btn:hover{background:#FFF0E8;color:var(--primary)}
+.detail{display:none;padding:1rem;border-top:2px solid var(--border);background:#FAFAFA}
+.detail.open{display:block}
+.detail-dish{margin-bottom:1.1rem;padding-bottom:1.1rem;border-bottom:1.5px dashed var(--border)}
+.detail-dish:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
+.detail-dish-hdr{display:flex;align-items:center;gap:.4rem;margin-bottom:.5rem}
+.detail-dish-name{font-size:.95rem;font-weight:700}
+.detail-sec{font-size:.72rem;font-weight:700;color:var(--muted);letter-spacing:.04em;margin-bottom:.3rem;margin-top:.55rem}
+.detail-ings{font-size:.8rem;color:var(--text);line-height:1.6;margin-bottom:.35rem}
+.steps{list-style:none}
+.step{display:flex;gap:.4rem;margin-bottom:.35rem;font-size:.82rem;align-items:flex-start}
+.sn{width:19px;height:19px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;flex-shrink:0;margin-top:.1rem;color:#fff}
+.sn.main{background:var(--primary)}.sn.rc{background:var(--recolte)}.sn.side{background:var(--side-color)}.sn.soup{background:var(--soup-color)}
+.regen-btn{flex:1;padding:.42rem;font-size:.78rem;border-radius:8px}
+.menu-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:.5rem}
+.menu-hdr h2{font-size:1.15rem;font-weight:700}
+.menu-hdr-btns{display:flex;gap:.5rem;flex-wrap:wrap}
+.menu-hdr-btns .btn{font-size:.8rem;padding:.38rem .75rem}
+.swap-panel{background:#EDF4FF;border:1.5px solid #A8C8F8;border-radius:14px;padding:1.2rem;margin-bottom:1.2rem}
+.swap-panel-title{font-size:.95rem;font-weight:700;color:#1A4A8A;margin-bottom:.8rem}
+.swap-row{display:flex;flex-wrap:wrap;align-items:flex-end;gap:.75rem;margin-bottom:.9rem}
+.swap-col label{display:block;font-size:.78rem;color:var(--muted);margin-bottom:.25rem}
+.swap-sel{border:2px solid var(--border);border-radius:8px;padding:.4rem .6rem;font-size:.85rem;font-family:inherit;background:#fff;color:var(--text);cursor:pointer}
+.swap-sel:focus{outline:none;border-color:#1A4A8A}
+.swap-arrow{font-size:1.5rem;padding-bottom:.2rem}
+.swap-preview{background:#fff;border:1.5px solid #A8C8F8;border-radius:10px;padding:.65rem 1rem;font-size:.84rem;color:var(--text);margin-bottom:.9rem;line-height:1.7}
+.swap-preview .warn{color:#B45309;font-weight:700}
+.swap-btns{display:flex;gap:.5rem}
+/* 購入リスト */
+.shop-panel{background:#FFF8EC;border:1.5px solid #FFCA7A;border-radius:14px;padding:1.2rem;margin-bottom:1.5rem}
+.shop-title{font-size:.95rem;font-weight:700;color:#7A4A00;margin-bottom:.8rem}
+.shop-grid{display:flex;flex-wrap:wrap;gap:.4rem}
+.shop-tag{background:#FFF0CC;border:1.5px solid #FFCA7A;border-radius:20px;padding:.25rem .7rem;font-size:.82rem;color:#7A4A00}
+.shop-empty{font-size:.85rem;color:var(--muted)}
+/* 食材不足警告 */
+.warn-panel{background:#FFF0F0;border:1.5px solid #FFAAAA;border-radius:12px;padding:.8rem 1rem;margin-bottom:1rem;font-size:.84rem;color:#7A0000}
+@media(max-width:640px){header h1{font-size:1.4rem}.week-grid{grid-template-columns:1fr}}
+@media print{.card.no-print,.menu-hdr-btns{display:none}.day-card{break-inside:avoid;page-break-inside:avoid}}
+</style>
+</head>
+<body>
+<header>
+  <h1>🍽️ 週間夕食メニュープランナー</h1>
+  <p>食材・調味料を入力して 1人分・1週間の夕食献立（3〜4品）を自動生成</p>
+</header>
+<div class="wrap">
+
+<div class="card">
+  <div class="sec-title"><div class="badge-num">1</div>冷蔵庫・在庫の食材・調味料を入力</div>
+  <div style="font-size:.82rem;color:var(--muted);margin-bottom:.45rem">カテゴリーから選ぶ：</div>
+  <div class="cat-row" id="catRow"></div>
+  <div class="quick-wrap" id="quickWrap"></div>
+  <div style="font-size:.82rem;color:var(--muted);margin-bottom:.45rem">または直接入力：</div>
+  <div class="inp-row">
+    <input type="text" id="ingIn" placeholder="食材・調味料名（例：鶏肉、醤油、みりん）"/>
+    <button class="btn btn-primary" onclick="addIng()">追加</button>
+  </div>
+  <div style="font-size:.82rem;color:var(--muted);margin-bottom:.4rem">追加した食材・調味料：</div>
+  <div class="ing-list" id="ingList"><div class="empty-state">食材・調味料を追加してください</div></div>
+  <div style="text-align:right">
+    <button class="btn btn-outline" style="font-size:.8rem;padding:.32rem .75rem" onclick="clearIng()">すべてクリア</button>
+  </div>
+</div>
+
+<div class="card no-print">
+  <div class="sec-title"><div class="badge-num">2</div>メニューを生成</div>
+  <div class="rc-info">
+    <div style="font-size:1.5rem;flex-shrink:0">🍲</div>
+    <p><strong>recolte RSY-2</strong>は汁物・スープ・ポタージュのみに使用します。主菜はすべて通常調理です。<br>
+    ✅ <strong>登録した食材・調味料だけ</strong>で作れる献立のみ生成します。<br>
+    🎯 目標：<strong>1食350〜500kcal・たんぱく質30〜45g・糖質100〜120g・食塩3〜5g</strong></p>
+  </div>
+  <button class="btn btn-primary gen-btn" onclick="genMenu()">🗓️ 1週間分の献立を生成する</button>
+</div>
+
+<div id="menuSec" style="display:none">
+  <div class="menu-hdr">
+    <h2>📅 今週の夕食献立</h2>
+    <div class="menu-hdr-btns">
+      <button class="btn btn-outline" onclick="toggleSwapPanel()">↔️ 料理を入替える</button>
+      <button class="btn btn-outline" onclick="genMenu()">🔄 再生成</button>
+      <button class="btn btn-outline" onclick="window.print()">🖨️ 印刷</button>
+    </div>
+  </div>
+
+  <div class="swap-panel" id="swapPanel" style="display:none">
+    <div class="swap-panel-title">↔️ 料理を入替える</div>
+    <div class="swap-row">
+      <div class="swap-col"><label>① 交換元の曜日</label><select class="swap-sel" id="swapFromDay" onchange="renderSwapPreview()"></select></div>
+      <div class="swap-col"><label>役割</label><select class="swap-sel" id="swapFromPart" onchange="renderSwapPreview()"><option value="main">主菜</option><option value="side1">副菜①</option><option value="side2">副菜②</option><option value="soup">汁物</option></select></div>
+      <div class="swap-arrow">↔️</div>
+      <div class="swap-col"><label>② 交換先の曜日</label><select class="swap-sel" id="swapToDay" onchange="renderSwapPreview()"></select></div>
+      <div class="swap-col"><label>役割</label><select class="swap-sel" id="swapToPart" onchange="renderSwapPreview()"><option value="main">主菜</option><option value="side1">副菜①</option><option value="side2">副菜②</option><option value="soup">汁物</option></select></div>
+    </div>
+    <div class="swap-preview" id="swapPreview">曜日と役割を選ぶと、交換内容がここに表示されます。</div>
+    <div class="swap-btns">
+      <button class="btn btn-primary" onclick="execSwap()">↔️ この内容で入替える</button>
+      <button class="btn btn-outline" onclick="toggleSwapPanel()">閉じる</button>
+    </div>
+  </div>
+
+  <div id="warnPanel"></div>
+  <div id="shopSection"></div>
+  <div class="stats" id="statsBar"></div>
+  <div class="week-grid" id="weekGrid"></div>
+</div>
+
+</div>
+<script>
+// ================================================================
+// 目標値
+// ================================================================
+const GOAL={kcal:{min:350,max:500},prot:{min:30,max:45},carb:{min:100,max:120},salt:{min:3,max:5}};
+
+// ================================================================
+// 主食材カテゴリー（重複チェック用）
+// ================================================================
+const FOOD_GROUPS={"肉類":["鶏肉","鶏もも肉","鶏むね肉","鶏ひき肉","豚肉","豚バラ肉","豚ひき肉","牛肉","合いびき肉","ソーセージ","ハム","ベーコン"],"魚介類":["鮭","さば","ちくわ","はんぺん"],"卵":["卵"],"大豆製品":["豆腐","厚揚げ","油揚げ","大豆（缶）"]};
+function getFoodGroup(k){for(const [g,items] of Object.entries(FOOD_GROUPS)){if(items.some(i=>i===k||k.includes(i)||i.includes(k)))return g;}return null;}
+function getGroups(r){const gs=new Set();r.keys.forEach(k=>{const g=getFoodGroup(k);if(g)gs.add(g);});return gs;}
+
+// ================================================================
+// 在庫チェック：recipe の keys+cond がすべて登録済みか判定
+// ================================================================
+function hasAllIngredients(r){
+  const ni=ings.map(i=>i.toLowerCase().trim());
+  const allNeeded=[...r.keys,...r.cond];
+  return allNeeded.every(need=>{
+    const n=need.toLowerCase().trim();
+    return ni.some(i=>i===n||i.includes(n)||n.includes(i));
+  });
+}
+
+// ================================================================
+// 購入が必要な食材を返す（登録済み食材に含まれないもの）
+// ================================================================
+function getMissingItems(r){
+  const ni=ings.map(i=>i.toLowerCase().trim());
+  return [...r.keys,...r.cond].filter(need=>{
+    const n=need.toLowerCase().trim();
+    return !ni.some(i=>i===n||i.includes(n)||n.includes(i));
+  });
+}
+
+// ================================================================
+// スコアリング
+// ================================================================
+function score(r){
+  const ni=ings.map(i=>i.toLowerCase());
+  let s=0;
+  r.keys.forEach(k=>{const kn=k.toLowerCase();if(ni.some(i=>i.includes(kn)||kn.includes(i)))s+=3;});
+  return s;
+}
+function used(r){
+  const ni=ings.map(i=>i.toLowerCase());
+  return r.keys.filter(k=>{const kn=k.toLowerCase();return ni.some(i=>i.includes(kn)||kn.includes(i));});
+}
+function sumNutr(recipes){
+  return recipes.filter(Boolean).reduce((a,r)=>({kcal:a.kcal+(r.kcal||0),prot:a.prot+(r.prot||0),carb:a.carb+(r.carb||0),salt:a.salt+(r.salt||0)}),{kcal:0,prot:0,carb:0,salt:0});
+}
+function nutriScore(n){
+  let s=0;
+  const chk=(v,min,max,w)=>{if(v>=min&&v<=max)s+=w;else s-=Math.abs(v-(v<min?min:max))/((max-min)||1)*w;};
+  chk(n.kcal,GOAL.kcal.min,GOAL.kcal.max,3);
+  chk(n.prot,GOAL.prot.min,GOAL.prot.max,3);
+  chk(n.carb,GOAL.carb.min,GOAL.carb.max,2);
+  chk(n.salt,GOAL.salt.min,GOAL.salt.max,2);
+  return s;
+}
+function pickAvoidConflict(pool,exclude,usedGroups,curNutr){
+  const cands=pool.filter(r=>!exclude.includes(r.id)&&hasAllIngredients(r)).map(r=>{
+    const gs=getGroups(r);
+    const conflicts=[...gs].filter(g=>usedGroups.has(g)).length;
+    const trial={kcal:curNutr.kcal+(r.kcal||0),prot:curNutr.prot+(r.prot||0),carb:curNutr.carb+(r.carb||0),salt:curNutr.salt+(r.salt||0)};
+    return{r,s:score(r),u:used(r),conflicts,ns:nutriScore(trial)};
+  }).sort((a,b)=>a.conflicts-b.conflicts||b.ns-a.ns||b.s-a.s);
+  if(!cands.length)return null;
+  const best=cands[0].conflicts;
+  const tier=cands.filter(x=>x.conflicts===best);
+  shuffle(tier);
+  return tier[0];
+}
+function pickBest(pool,exclude=[]){
+  const filtered=pool.filter(r=>!exclude.includes(r.id)&&hasAllIngredients(r));
+  const scored=filtered.map(r=>({r,s:score(r),u:used(r)})).sort((a,b)=>b.s-a.s);
+  if(!scored.length)return null;
+  const top=scored[0].s;
+  const tier=scored.filter(x=>x.s===top);
+  shuffle(tier);
+  return tier[0];
+}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}}
+
+// ================================================================
+// DATA
+// salt = 食塩相当量(g/1人分)
+// RSY-2対応：method="rc" は汁物・スープ・ポタージュのみ
+// 主菜はすべて method="rg"（通常調理）に変更
+// ================================================================
+const MAINS=[
+  {id:101,name:"豚の生姜焼き",method:"rg",liquid:false,emoji:"🐖",kcal:300,prot:22,carb:12,salt:1.8,keys:["豚肉","玉ねぎ","しょうが"],cond:["醤油","みりん","酒","砂糖"],time:20,steps:["豚肉にしょうが・醤油・みりん・酒で下味10分","玉ねぎを薄切りにしてフライパンで炒める","豚肉を加えて炒め砂糖・追い醤油で味を調える","キャベツの千切りと共に盛り付けて完成"]},
+  {id:102,name:"鶏の唐揚げ",method:"rg",liquid:false,emoji:"🍗",kcal:380,prot:28,carb:16,salt:1.5,keys:["鶏もも肉","しょうが","にんにく"],cond:["醤油","酒","片栗粉","サラダ油"],time:45,steps:["鶏もも肉を一口大に切る","醤油・酒・しょうが・にんにく（すりおろし）で30分下味","片栗粉をまぶして170℃の油で3〜4分揚げる","レモンを添えて完成"]},
+  {id:103,name:"焼き鮭",method:"rg",liquid:false,emoji:"🐟",kcal:200,prot:26,carb:1,salt:1.2,keys:["鮭"],cond:["塩","酒"],time:20,steps:["鮭に塩をふって10分おき水分を拭く","グリルまたはフライパンで皮目から中火で焼く（片面3〜4分）","大根おろし・レモンを添えて完成"]},
+  {id:104,name:"親子丼",method:"rg",liquid:false,emoji:"🥚",kcal:350,prot:28,carb:32,salt:2.0,keys:["鶏もも肉","卵","玉ねぎ"],cond:["醤油","みりん","だし","砂糖"],time:20,steps:["鶏もも肉と玉ねぎを切り、だし・醤油・みりん・砂糖を合わせる","タレで玉ねぎ→鶏肉の順で煮る","溶き卵を回しかけて半熟で火を止める","ご飯の上に盛り付けて完成"]},
+  {id:105,name:"麻婆茄子",method:"rg",liquid:false,emoji:"🍆",kcal:250,prot:16,carb:10,salt:2.2,keys:["なす","豚ひき肉","しょうが","にんにく"],cond:["豆板醤","味噌","醤油","みりん","ごま油"],time:25,steps:["なすを一口大に切り塩水に浸ける（5分）","しょうが・にんにくをみじん切りにしてごま油で炒める","豚ひき肉→なすの順に加えて炒める","味噌・醤油・みりん・水で味を調えて完成"]},
+  {id:106,name:"回鍋肉",method:"rg",liquid:false,emoji:"🥩",kcal:320,prot:20,carb:10,salt:2.0,keys:["豚バラ肉","キャベツ","ピーマン","にんにく"],cond:["豆板醤","甜麺醤","醤油","酒","ごま油"],time:20,steps:["豚バラ肉・キャベツ・ピーマンを食べやすい大きさに切る","豆板醤・甜麺醤・醤油・酒でタレを作る","豚バラ肉→にんにく→野菜の順で炒め、タレを絡める","ごま油で香りをつけて完成"]},
+  {id:107,name:"牛丼",method:"rg",liquid:false,emoji:"🐄",kcal:400,prot:24,carb:38,salt:2.2,keys:["牛肉","玉ねぎ"],cond:["醤油","みりん","酒","砂糖","だし"],time:20,steps:["玉ねぎを薄切りにし、だし・醤油・みりん・酒・砂糖を合わせる","タレと玉ねぎを鍋で煮て、牛肉を加えて色が変わるまで煮る","ご飯に盛り付け紅しょうがを添えて完成"]},
+  {id:108,name:"鮭のムニエル",method:"rg",liquid:false,emoji:"🐠",kcal:260,prot:26,carb:4,salt:1.0,keys:["鮭","バター","レモン"],cond:["塩","こしょう","薄力粉"],time:20,steps:["鮭に塩こしょうし薄力粉をまぶす","フライパンにバターを溶かして中火で焼く（片面4分）","レモン汁を絞ってかけ、バターソースを回しかけて完成"]},
+  {id:109,name:"さばの塩焼き",method:"rg",liquid:false,emoji:"🐡",kcal:230,prot:22,carb:1,salt:1.2,keys:["さば"],cond:["塩","酒"],time:20,steps:["さばに塩を振って10分おき水分を拭く","グリルで皮目から両面を焼く","大根おろし・醤油・すだちを添えて完成"]},
+  {id:110,name:"ガパオライス",method:"rg",liquid:false,emoji:"🌿",kcal:360,prot:26,carb:34,salt:2.0,keys:["鶏ひき肉","ピーマン","玉ねぎ","にんにく","卵"],cond:["ナンプラー","醤油","オイスターソース","砂糖"],time:20,steps:["にんにくと野菜をみじん切りにする","フライパンでにんにく→鶏ひき肉→野菜の順で炒める","ナンプラー・醤油・オイスターソース・砂糖で味付け","目玉焼きをのせてご飯と共に完成"]},
+  {id:111,name:"豚キムチ炒め",method:"rg",liquid:false,emoji:"🌶️",kcal:280,prot:20,carb:8,salt:2.0,keys:["豚肉","キムチ","豆腐"],cond:["醤油","ごま油","砂糖"],time:20,steps:["豚肉を食べやすい大きさに切り、豆腐を水切りして一口大に切る","ごま油で豚肉→キムチ→豆腐の順に炒める","醤油・砂糖で味を調えてごまを散らして完成"]},
+  {id:112,name:"焼きそば",method:"rg",liquid:false,emoji:"🍜",kcal:450,prot:18,carb:60,salt:2.5,keys:["焼きそば麺","豚肉","キャベツ","もやし"],cond:["ソース","塩","こしょう","ごま油"],time:15,steps:["豚肉とキャベツを切る","フライパンで豚肉→キャベツ・もやしの順で炒める","麺を加えて水大さじ2でほぐし、ソースで味を調える","青のり・紅しょうがを添えて完成"]},
+  {id:113,name:"和風きのこパスタ",method:"rg",liquid:false,emoji:"🍄",kcal:420,prot:16,carb:62,salt:1.8,keys:["パスタ","しめじ","えのき","ベーコン"],cond:["醤油","バター","塩","にんにく"],time:25,steps:["しめじ・えのきを小房に分け、ベーコンを短冊切りにする","パスタを塩茹でする","にんにく→ベーコン→きのこの順で炒め、パスタと茹で汁を加える","醤油・バターで味を調え刻みのりを散らして完成"]},
+  {id:114,name:"トマトパスタ",method:"rg",liquid:false,emoji:"🍝",kcal:400,prot:12,carb:65,salt:1.5,keys:["パスタ","トマト缶","にんにく"],cond:["オリーブオイル","塩","こしょう","砂糖"],time:30,steps:["にんにくをみじん切りにしてオリーブオイルで炒める","トマト缶を加えて塩・砂糖で15分煮込む","パスタを塩茹でしてソースと和える","バジルやパルメザンをトッピングして完成"]},
+  {id:115,name:"オムライス",method:"rg",liquid:false,emoji:"🍳",kcal:480,prot:20,carb:55,salt:2.0,keys:["卵","鶏肉","玉ねぎ"],cond:["バター","ケチャップ","塩","こしょう"],time:25,steps:["玉ねぎと鶏肉をみじん切りにしてバターで炒める","ご飯を加えてケチャップで炒めてチキンライスを作る","溶き卵でバターを使って薄いオムレツを作る","チキンライスを包みケチャップをかけて完成"]},
+  {id:116,name:"鶏の照り焼き",method:"rg",liquid:false,emoji:"🍗",kcal:280,prot:26,carb:14,salt:1.8,keys:["鶏もも肉","しょうが"],cond:["醤油","みりん","酒","砂糖"],time:25,steps:["鶏もも肉を一口大に切りフライパンで皮目から焼く","醤油・みりん・酒・砂糖・しょうがのすりおろしを合わせてタレを作る","鶏肉をタレで炒め煮にする","とろみが出たら完成"]},
+  {id:117,name:"さばの味噌煮",method:"rg",liquid:false,emoji:"🐟",kcal:260,prot:24,carb:12,salt:2.0,keys:["さば","しょうが"],cond:["味噌","みりん","酒","砂糖"],time:25,steps:["さばに塩をして10分おき、熱湯をかけて臭みを取る","味噌・みりん・酒・砂糖・水100ml・しょうがをフライパンで合わせる","さばを加えて中火で15〜20分煮る","煮汁を煮詰めて照りが出たら完成"]},
+  {id:118,name:"豚の角煮",method:"rg",liquid:false,emoji:"🥢",kcal:420,prot:24,carb:15,salt:2.2,keys:["豚バラ肉","しょうが"],cond:["醤油","みりん","酒","砂糖"],time:80,steps:["豚バラ肉を4〜5cm幅に切りフライパンで表面を焼く","醤油・みりん・酒・砂糖・水200ml・しょうがを鍋で合わせる","豚肉を加えて落し蓋をして弱火で60分煮る","煮汁が少なくなったら完成"]},
+  {id:119,name:"筑前煮",method:"rg",liquid:false,emoji:"🥕",kcal:250,prot:20,carb:22,salt:2.0,keys:["鶏肉","ごぼう","れんこん","にんじん","こんにゃく"],cond:["醤油","みりん","酒","砂糖","だし"],time:40,steps:["鶏肉を一口大に切り、ごぼう・れんこん・にんじんを乱切りにする","こんにゃくをちぎって炒り、材料と調味料を鍋で合わせる","落し蓋をして中火で20〜25分煮る","水分を飛ばして照りが出たら完成"]},
+  {id:120,name:"ロールキャベツ",method:"rg",liquid:false,emoji:"🥬",kcal:290,prot:22,carb:18,salt:1.8,keys:["キャベツ","合いびき肉","玉ねぎ","トマト缶"],cond:["塩","こしょう","パン粉","卵","コンソメ"],time:50,steps:["キャベツをレンジ3分加熱し葉をはがす","合いびき肉・みじん切り玉ねぎ・パン粉・卵・塩こしょうで種を作る","キャベツで包み爪楊枝で固定する","トマト缶・コンソメ・水200mlで30分煮込んで完成"]}
+];
+
+const SIDES=[
+  {id:201,name:"ほうれん草のおひたし",emoji:"🥬",kcal:30,prot:3,carb:3,salt:0.5,keys:["ほうれん草"],cond:["だし","醤油","ごま"],time:10,steps:["ほうれん草を塩茹でして冷水にとる","水気を絞って3〜4cm長さに切る","だし醤油をかけてごまを散らして完成"]},
+  {id:202,name:"卵焼き",emoji:"🍳",kcal:120,prot:8,carb:4,salt:0.6,keys:["卵"],cond:["醤油","みりん","砂糖"],time:10,steps:["卵・醤油・みりん・砂糖・塩少々を混ぜる","卵焼き器にサラダ油を熱して卵液を3回に分けて巻く","形を整えてお好みの厚さに切って完成"]},
+  {id:203,name:"きんぴらごぼう",emoji:"🥕",kcal:80,prot:2,carb:12,salt:0.8,keys:["ごぼう","にんじん"],cond:["醤油","みりん","砂糖","ごま","ごま油"],time:15,steps:["ごぼうとにんじんをせん切りにし、ごぼうを水にさらす","ごま油で炒め、醤油・みりん・砂糖で味付け","炒り白ごまを散らして完成"]},
+  {id:204,name:"にんじんのきんぴら",emoji:"🥕",kcal:60,prot:1,carb:10,salt:0.7,keys:["にんじん"],cond:["醤油","みりん","砂糖","ごま"],time:10,steps:["にんじんをせん切りにする","ごま油で炒め、醤油・みりん・砂糖で味付け","炒り白ごまを散らして完成"]},
+  {id:205,name:"ポテトサラダ",emoji:"🥔",kcal:140,prot:5,carb:18,salt:0.6,keys:["じゃがいも","卵","きゅうり"],cond:["マヨネーズ","塩","こしょう","酢"],time:25,steps:["じゃがいもを茹でてつぶす、卵を固茹でにして刻む","きゅうりを薄切りにして塩もみし水気を絞る","すべてをマヨネーズ・塩・こしょう・酢で和えて完成"]},
+  {id:206,name:"冷ややっこ",emoji:"🧊",kcal:60,prot:6,carb:2,salt:0.5,keys:["豆腐","しょうが","ねぎ"],cond:["醤油","ごま油"],time:3,steps:["豆腐を食べやすい大きさに切る","しょうがをすりおろし、ねぎを小口切りにする","豆腐にのせて醤油・ごま油をかけて完成"]},
+  {id:207,name:"きゅうりの酢の物",emoji:"🥒",kcal:25,prot:1,carb:5,salt:0.4,keys:["きゅうり"],cond:["酢","砂糖","塩","だし"],time:10,steps:["きゅうりを薄切りにして塩もみし水気を絞る","酢・砂糖・塩・だしを合わせてたれを作る","きゅうりとたれを和えて完成"]},
+  {id:208,name:"ブロッコリーのごま和え",emoji:"🥦",kcal:55,prot:4,carb:5,salt:0.5,keys:["ブロッコリー"],cond:["ごま","醤油","みりん","砂糖"],time:10,steps:["ブロッコリーを小房に分けて塩茹でする","ごま・醤油・みりん・砂糖を合わせてタレを作る","ブロッコリーとタレを和えて完成"]},
+  {id:209,name:"もやしのナムル",emoji:"🌱",kcal:40,prot:2,carb:4,salt:0.5,keys:["もやし"],cond:["塩","ごま油","にんにく","ごま"],time:10,steps:["もやしをさっと塩茹でして水気を切る","にんにくのすりおろし・塩・ごま油・白ごまで和える","冷蔵庫で10分冷やして完成"]},
+  {id:210,name:"きのこのバター炒め",emoji:"🍄",kcal:70,prot:2,carb:4,salt:0.6,keys:["しめじ","えのき","まいたけ"],cond:["バター","醤油","塩","こしょう"],time:10,steps:["きのこを小房に分ける","フライパンにバターを溶かしてきのこを炒める","醤油・塩・こしょうで味を調えてパセリを散らして完成"]},
+  {id:211,name:"大根サラダ",emoji:"🌿",kcal:30,prot:1,carb:5,salt:0.4,keys:["大根"],cond:["醤油","ごま油","酢","砂糖"],time:8,steps:["大根をせん切りにして塩もみし水気を絞る","醤油・ごま油・酢・砂糖でドレッシングを作る","大根とドレッシングを和えてごまをかけて完成"]},
+  {id:212,name:"かぼちゃの煮物",emoji:"🎃",kcal:100,prot:2,carb:20,salt:0.7,keys:["かぼちゃ"],cond:["醤油","みりん","砂糖","だし"],time:20,steps:["かぼちゃを一口大に切る","だし・醤油・みりん・砂糖を合わせた煮汁で柔らかく煮る","煮汁が少なくなったら完成"]},
+  {id:213,name:"キャベツのコールスロー",emoji:"🥗",kcal:70,prot:2,carb:8,salt:0.5,keys:["キャベツ","にんじん"],cond:["マヨネーズ","酢","砂糖","塩","こしょう"],time:10,steps:["キャベツとにんじんをせん切りにして塩もみし水気を絞る","マヨネーズ・酢・砂糖・塩・こしょうで和える","冷蔵庫で10分冷やして完成"]},
+  {id:214,name:"ピーマンのきんぴら",emoji:"🫑",kcal:45,prot:1,carb:6,salt:0.5,keys:["ピーマン"],cond:["醤油","みりん","ごま油","ごま"],time:8,steps:["ピーマンをせん切りにする","ごま油で炒めて醤油・みりんで味付け","白ごまを散らして完成"]},
+  {id:215,name:"トマトサラダ",emoji:"🍅",kcal:40,prot:1,carb:7,salt:0.3,keys:["トマト","玉ねぎ"],cond:["オリーブオイル","酢","塩","こしょう"],time:5,steps:["トマトを食べやすい大きさに切り、玉ねぎをみじん切りにして水にさらす","オリーブオイル・酢・塩・こしょうでドレッシングを作る","盛り付けてドレッシングをかけて完成"]},
+  {id:216,name:"なすの揚げびたし",emoji:"🍆",kcal:90,prot:1,carb:7,salt:0.7,keys:["なす"],cond:["だし","醤油","みりん","ごま油"],time:15,steps:["なすを乱切りにしてごま油多めで素揚げする","だし・醤油・みりんを合わせたたれに浸ける","しょうがやねぎを添えて完成"]},
+  {id:217,name:"小松菜のごま炒め",emoji:"🥬",kcal:45,prot:2,carb:3,salt:0.5,keys:["小松菜"],cond:["ごま油","醤油","ごま","塩"],time:8,steps:["小松菜を3〜4cm長さに切る","ごま油で炒めて醤油・塩で味付け","白ごまを散らして完成"]},
+  {id:218,name:"厚揚げのステーキ",emoji:"🟫",kcal:140,prot:10,carb:4,salt:0.8,keys:["厚揚げ","しょうが","ねぎ"],cond:["醤油","みりん","ごま油"],time:12,steps:["厚揚げをキッチンペーパーで水気を拭く","フライパンにごま油を熱して両面こんがり焼く","醤油・みりん・しょうがのたれをかけ、ねぎを散らして完成"]},
+  {id:219,name:"ひじきの煮物",emoji:"🌿",kcal:70,prot:3,carb:8,salt:0.8,keys:["ひじき","にんじん","油揚げ"],cond:["醤油","みりん","砂糖","だし"],time:20,steps:["ひじきを水で戻し、にんじんをせん切りに、油揚げを細切りにする","だし・醤油・みりん・砂糖で煮る","水分が少なくなったら完成"]},
+  {id:220,name:"切り干し大根の煮物",emoji:"🥗",kcal:75,prot:2,carb:12,salt:0.8,keys:["切り干し大根","にんじん","油揚げ"],cond:["醤油","みりん","砂糖","だし"],time:20,steps:["切り干し大根を水で戻し、にんじんをせん切りに、油揚げを細切りにする","だし・醤油・みりん・砂糖で15分煮る","水分が少なくなったら完成"]}
+];
+
+// RSY-2対応：汁物・スープ・ポタージュのみ method="rc"
+const SOUPS=[
+  {id:301,name:"豆腐とわかめの味噌汁",emoji:"🍵",kcal:45,prot:4,carb:3,salt:1.2,keys:["豆腐","わかめ"],cond:["だし","味噌"],time:8,rc:false,steps:["だしを沸かし豆腐を角切りにして入れる","わかめを加えて味噌を溶かし入れる","ひと煮立ちさせて完成"]},
+  {id:302,name:"なめこの味噌汁",emoji:"🍵",kcal:35,prot:3,carb:4,salt:1.2,keys:["なめこ","豆腐"],cond:["だし","味噌"],time:8,rc:false,steps:["だしを沸かしてなめこを加える","豆腐を入れて味噌を溶き入れる","ひと煮立ちさせて完成"]},
+  {id:303,name:"大根と油揚げの味噌汁",emoji:"🍵",kcal:50,prot:3,carb:5,salt:1.2,keys:["大根","油揚げ"],cond:["だし","味噌"],time:12,rc:false,steps:["大根を薄切りにし油揚げを細切りにする","だしで大根を柔らかく煮る","油揚げを加えて味噌を溶き入れて完成"]},
+  {id:304,name:"きのこの味噌汁",emoji:"🍵",kcal:30,prot:2,carb:3,salt:1.2,keys:["しめじ","えのき"],cond:["だし","味噌"],time:8,rc:false,steps:["だしを沸かしてきのこを加える","味噌を溶き入れてひと煮立ちさせる","ねぎを散らして完成"]},
+  {id:305,name:"野菜の味噌汁",emoji:"🍵",kcal:50,prot:2,carb:8,salt:1.2,keys:["玉ねぎ","にんじん","じゃがいも"],cond:["だし","味噌"],time:12,rc:false,steps:["野菜を薄切りにしてだしで柔らかく煮る","味噌を溶き入れる","ひと煮立ちさせて完成"]},
+  {id:306,name:"中華風卵スープ",emoji:"🍜",kcal:60,prot:5,carb:3,salt:1.0,keys:["卵","ねぎ"],cond:["鶏ガラスープ","醤油","塩","ごま油"],time:10,rc:true,steps:["鶏ガラスープと水で出汁を作り醤油・塩で味を調える","沸騰したら溶き卵を細く流し入れてかき混ぜる","ごま油とねぎを散らして完成"]},
+  {id:307,name:"コーンスープ",emoji:"🌽",kcal:90,prot:3,carb:14,salt:0.8,keys:["コーン缶","牛乳"],cond:["コンソメ","バター","塩","こしょう"],time:10,rc:true,steps:["コーン缶の汁ごとミキサーにかける","鍋にバターを溶かしてコーンペーストを加えコンソメ・牛乳を注ぐ","温めながら塩こしょうで整えて完成"]},
+  {id:308,name:"長ねぎの味噌汁",emoji:"🍵",kcal:40,prot:3,carb:5,salt:1.2,keys:["ねぎ","豆腐"],cond:["だし","味噌"],time:8,rc:false,steps:["ねぎを斜め切りにし豆腐を角切りにする","だしを沸かしてねぎと豆腐を加える","味噌を溶き入れてひと煮立ちさせて完成"]},
+  {id:309,name:"トマトと卵のスープ",emoji:"🍅",kcal:55,prot:4,carb:5,salt:0.9,keys:["トマト","卵"],cond:["コンソメ","塩","こしょう","ごま油"],time:10,rc:true,steps:["トマトを角切りにしてコンソメスープで煮る","溶き卵を回し入れてかき混ぜる","ごま油・塩こしょうで整えて完成"]},
+  {id:310,name:"小松菜の味噌汁",emoji:"🍵",kcal:35,prot:2,carb:3,salt:1.2,keys:["小松菜","油揚げ"],cond:["だし","味噌"],time:8,rc:false,steps:["小松菜を3cm長さに切り油揚げを細切りにする","だしを沸かして小松菜と油揚げを加える","味噌を溶き入れてひと煮立ちさせて完成"]},
+  {id:311,name:"玉ねぎスープ",emoji:"🧅",kcal:55,prot:1,carb:8,salt:0.8,keys:["玉ねぎ"],cond:["コンソメ","バター","塩","こしょう"],time:15,rc:true,steps:["玉ねぎを薄切りにしてバターでしんなりするまで炒める","水とコンソメを加えて10分煮る","塩こしょうで整えてパセリを散らして完成"]},
+  {id:312,name:"ほうれん草の味噌汁",emoji:"🍵",kcal:35,prot:2,carb:3,salt:1.2,keys:["ほうれん草","油揚げ"],cond:["だし","味噌"],time:8,rc:false,steps:["ほうれん草を3cm長さに切り油揚げを細切りにする","だしを沸かしてほうれん草と油揚げを加える","味噌を溶き入れてひと煮立ちさせて完成"]},
+  {id:313,name:"かぼちゃのポタージュ",emoji:"🎃",kcal:180,prot:5,carb:26,salt:0.8,keys:["かぼちゃ","玉ねぎ","牛乳"],cond:["塩","こしょう","バター","コンソメ"],time:55,rc:true,steps:["かぼちゃと玉ねぎを切り、バターで玉ねぎを炒める","コンソメ・水200mlと共にポットに入れてスープコースで40分調理","ハンドブレンダーでなめらかにする","牛乳150mlを加えて温め塩こしょうで整えて完成"]}
+];
+
+const CATS={
+  "肉類":["鶏もも肉","鶏むね肉","鶏ひき肉","豚バラ肉","豚肉","豚ひき肉","牛肉","合いびき肉","ソーセージ","ハム","ベーコン"],
+  "魚介類":["鮭","さば","ちくわ","はんぺん"],
+  "野菜":["玉ねぎ","にんじん","じゃがいも","キャベツ","大根","なす","ほうれん草","ごぼう","れんこん","ピーマン","もやし","かぼちゃ","セロリ","ねぎ","ブロッコリー","小松菜","トマト","きゅうり"],
+  "きのこ・豆腐":["しめじ","えのき","まいたけ","豆腐","厚揚げ","油揚げ","こんにゃく","なめこ"],
+  "乾物・缶詰":["トマト缶","大豆（缶）","コーン缶","パスタ","焼きそば麺","ひじき","切り干し大根","わかめ"],
+  "卵・乳製品":["卵","牛乳","バター","生クリーム"],
+  "調味料（和）":["醤油","みりん","酒","砂糖","塩","味噌","だし","酢","片栗粉","ごま油","ごま","サラダ油"],
+  "調味料（洋・中）":["こしょう","オリーブオイル","コンソメ","ケチャップ","マヨネーズ","バター","薄力粉","豆板醤","甜麺醤","ナンプラー","オイスターソース","鶏ガラスープ","ソース","パン粉"],
+  "薬味・その他":["しょうが","にんにく","レモン","キムチ","にんにく"]
+};
+
+// ================================================================
+// STATE
+// ================================================================
+let curCat="肉類",ings=[],weekMenu=[];
+const DAYS=["月曜日","火曜日","水曜日","木曜日","金曜日","土曜日","日曜日"];
+
+document.addEventListener('DOMContentLoaded',()=>{renderCats();renderQuick();document.getElementById('ingIn').addEventListener('keydown',e=>{if(e.key==='Enter')addIng();});});
+
+function renderCats(){const g=document.getElementById('catRow');g.innerHTML='';Object.keys(CATS).forEach(c=>{const b=document.createElement('button');b.className='cat-btn'+(c===curCat?' active':'');b.textContent=c;b.onclick=()=>{curCat=c;renderCats();renderQuick();};g.appendChild(b);});}
+function renderQuick(){const g=document.getElementById('quickWrap');g.innerHTML='';CATS[curCat].forEach(item=>{const b=document.createElement('button');b.className='qi'+(ings.includes(item)?' added':'');b.textContent=item;b.onclick=()=>{if(!ings.includes(item)){ings.push(item);renderIngs();renderQuick();}};g.appendChild(b);});}
+function addIng(){const el=document.getElementById('ingIn');const v=el.value.trim();if(v&&!ings.includes(v)){ings.push(v);renderIngs();renderQuick();}el.value='';el.focus();}
+function removeIng(item){ings=ings.filter(i=>i!==item);renderIngs();renderQuick();}
+function clearIng(){ings=[];renderIngs();renderQuick();}
+function renderIngs(){const el=document.getElementById('ingList');if(!ings.length){el.innerHTML='<div class="empty-state">食材・調味料を追加してください</div>';return;}el.innerHTML=ings.map(i=>`<div class="ing-tag">${i}<span class="x" onclick="removeIng('${i.replace(/'/g,"\\'")}')">×</span></div>`).join('');}
+
+// ================================================================
+// GENERATION
+// ================================================================
+function genMenu(){
+  weekMenu=[];
+  const usedMain=[],usedSide=[],usedSoup=[];
+  const availMain=MAINS.filter(r=>hasAllIngredients(r));
+  const availSide=SIDES.filter(r=>hasAllIngredients(r));
+  const availSoup=SOUPS.filter(r=>hasAllIngredients(r));
+
+  if(availMain.length<3){
+    document.getElementById('warnPanel').innerHTML=`<div class="warn-panel">⚠️ 登録食材で作れる主菜が${availMain.length}品しかありません。食材・調味料を追加してください。</div>`;
+  }else{
+    document.getElementById('warnPanel').innerHTML='';
+  }
+
+  for(let i=0;i<7;i++){
+    let mItem=pickBest(availMain,usedMain);
+    if(!mItem){
+      shuffle(availMain);
+      usedMain.length=0;
+      mItem=pickBest(availMain,[]);
+    }
+    if(!mItem)break;
+    usedMain.push(mItem.r.id);
+    const dayGroups=new Set(getGroups(mItem.r));
+    let nutr={kcal:mItem.r.kcal||0,prot:mItem.r.prot||0,carb:mItem.r.carb||0,salt:mItem.r.salt||0};
+
+    const s1=pickAvoidConflict(availSide,usedSide,dayGroups,nutr)||{r:availSide[0]||SIDES[0],s:0,u:[]};
+    usedSide.push(s1.r.id);getGroups(s1.r).forEach(g=>dayGroups.add(g));
+    nutr={kcal:nutr.kcal+(s1.r.kcal||0),prot:nutr.prot+(s1.r.prot||0),carb:nutr.carb+(s1.r.carb||0),salt:nutr.salt+(s1.r.salt||0)};
+
+    const s2=pickAvoidConflict(availSide,usedSide,dayGroups,nutr)||{r:availSide[1]||SIDES[1],s:0,u:[]};
+    usedSide.push(s2.r.id);getGroups(s2.r).forEach(g=>dayGroups.add(g));
+    nutr={kcal:nutr.kcal+(s2.r.kcal||0),prot:nutr.prot+(s2.r.prot||0),carb:nutr.carb+(s2.r.carb||0),salt:nutr.salt+(s2.r.salt||0)};
+
+    const soupItem=pickAvoidConflict(availSoup,usedSoup,dayGroups,nutr)||null;
+    if(soupItem)usedSoup.push(soupItem.r.id);
+
+    weekMenu.push({day:DAYS[i],main:mItem,side1:s1,side2:s2,soup:soupItem,isRc:soupItem?.r?.rc||false});
+  }
+  renderShoppingList();
+  renderMenu();
+}
+
+// ================================================================
+// 購入リスト生成
+// ================================================================
+function renderShoppingList(){
+  const allItems=new Set();
+  weekMenu.forEach(d=>{
+    [d.main.r,d.side1.r,d.side2.r,d.soup?.r].filter(Boolean).forEach(r=>{
+      getMissingItems(r).forEach(item=>allItems.add(item));
+    });
+  });
+  const sec=document.getElementById('shopSection');
+  if(allItems.size===0){
+    sec.innerHTML=`<div class="shop-panel"><div class="shop-title">🛒 購入リスト</div><div class="shop-empty">✅ すべての食材・調味料が揃っています！</div></div>`;
+  }else{
+    const tags=[...allItems].map(i=>`<span class="shop-tag">${i}</span>`).join('');
+    sec.innerHTML=`<div class="shop-panel"><div class="shop-title">🛒 購入が必要な食材・調味料（${allItems.size}点）</div><div class="shop-grid">${tags}</div></div>`;
+  }
+}
+
+function regenMain(i){
+  const curId=weekMenu[i].main.r.id;
+  const avail=MAINS.filter(r=>hasAllIngredients(r));
+  const item=pickBest(avail,[curId]);
+  if(item)weekMenu[i].main=item;
+  renderShoppingList();renderMenu();
+}
+function regenSide(dayIdx,sideNum){
+  const usedSideIds=weekMenu.flatMap(d=>{const out=[];if(d.side1)out.push(d.side1.r.id);if(d.side2)out.push(d.side2.r.id);return out;});
+  const curId=(sideNum===1?weekMenu[dayIdx].side1:weekMenu[dayIdx].side2)?.r.id;
+  const avail=SIDES.filter(r=>hasAllIngredients(r));
+  const item=pickBest(avail,usedSideIds.filter(id=>id!==curId));
+  if(item){if(sideNum===1)weekMenu[dayIdx].side1=item;else weekMenu[dayIdx].side2=item;}
+  renderShoppingList();renderMenu();
+}
+function regenSoup(dayIdx){
+  const usedSoups=weekMenu.filter((_,di)=>di!==dayIdx&&weekMenu[di]?.soup).map(d=>d.soup.r.id);
+  const avail=SOUPS.filter(r=>hasAllIngredients(r));
+  const item=pickBest(avail,usedSoups);
+  if(item){weekMenu[dayIdx].soup=item;weekMenu[dayIdx].isRc=item.r.rc||false;}
+  renderShoppingList();renderMenu();
+}
+
+function toggleSwapPanel(){const panel=document.getElementById('swapPanel');const isHidden=panel.style.display==='none';panel.style.display=isHidden?'block':'none';if(isHidden){['swapFromDay','swapToDay'].forEach((id,idx)=>{const sel=document.getElementById(id);sel.innerHTML=DAYS.map((d,i)=>`<option value="${i}">${d}</option>`).join('');if(idx===1)sel.value='1';});renderSwapPreview();}}
+function renderSwapPreview(){const fi=+document.getElementById('swapFromDay').value;const fp=document.getElementById('swapFromPart').value;const ti=+document.getElementById('swapToDay').value;const tp=document.getElementById('swapToPart').value;const fromItem=weekMenu[fi]?.[fp];const toItem=weekMenu[ti]?.[tp];const fromName=fromItem?`${fromItem.r.emoji} ${fromItem.r.name}`:'（なし）';const toName=toItem?`${toItem.r.emoji} ${toItem.r.name}`:'（なし）';const roleMap={main:'主菜',side1:'副菜①',side2:'副菜②',soup:'汁物'};let warn='';if(fp!==tp)warn=`<div class="warn">⚠️ 役割が異なります（${roleMap[fp]}↔${roleMap[tp]}）。同じ役割同士を選んでください。</div>`;if(fi===ti)warn=`<div class="warn">⚠️ 同じ曜日が選ばれています。異なる曜日を選んでください。</div>`;document.getElementById('swapPreview').innerHTML=`<strong>${DAYS[fi]}の${roleMap[fp]}</strong>：${fromName}<br>　↕️<br><strong>${DAYS[ti]}の${roleMap[tp]}</strong>：${toName}${warn}`;}
+function execSwap(){const fi=+document.getElementById('swapFromDay').value;const fp=document.getElementById('swapFromPart').value;const ti=+document.getElementById('swapToDay').value;const tp=document.getElementById('swapToPart').value;if(fp!==tp){alert('同じ役割（副菜①↔副菜①など）同士のみ入替えできます');return;}if(fi===ti){alert('異なる曜日を選んでください');return;}const tmp=weekMenu[fi][fp];weekMenu[fi][fp]=weekMenu[ti][tp];weekMenu[ti][tp]=tmp;renderShoppingList();renderMenu();document.getElementById('swapPanel').style.display='block';renderSwapPreview();}
+
+// ================================================================
+// RENDER
+// ================================================================
+function renderMenu(){
+  document.getElementById('menuSec').style.display='block';
+  const rcCnt=weekMenu.filter(d=>d.isRc).length;
+  const totalDishes=weekMenu.reduce((s,d)=>s+2+(d.soup?1:0)+1,0);
+  document.getElementById('statsBar').innerHTML=`
+    <div class="stat"><div class="val" style="color:var(--recolte)">${rcCnt}</div><div class="lbl">🍲 RSY-2使用日</div></div>
+    <div class="stat"><div class="val">${7-rcCnt}</div><div class="lbl">🍳 通常調理日</div></div>
+    <div class="stat"><div class="val">${totalDishes}</div><div class="lbl">🍽️ 週の総品数</div></div>
+    <div class="stat"><div class="val">${ings.length}</div><div class="lbl">📦 登録食材</div></div>
+  `;
+  document.getElementById('weekGrid').innerHTML=weekMenu.map((d,i)=>renderCard(d,i)).join('');
+}
+
+function renderNutrBar(label,val,min,max){
+  const pct=Math.min(Math.round(val/max*100),120);
+  const ok=val>=min&&val<=max;const over=val>max;
+  const cls=ok?'ok':over?'over':'low';
+  const color=ok?'#5BAD8F':over?'#E8834C':'#9B7EC8';
+  const status=ok?'✓':over?'↑':'↓';
+  return `<div class="nutr-row"><div class="nutr-label">${label}</div><div class="nutr-track"><div class="nutr-fill ${cls}" style="width:${Math.min(pct,100)}%"></div></div><div class="nutr-val" style="color:${color}">${status}${Math.round(val)}</div></div>`;
+}
+
+function renderCard(d,i){
+  const allUsed=[...d.main.u,...d.side1.u,...d.side2.u,...(d.soup?.u||[])];
+  const uniqueUsed=[...new Set(allUsed)];
+  const dishCount=3+(d.soup?1:0);
+  const recipes=[d.main.r,d.side1.r,d.side2.r,d.soup?.r].filter(Boolean);
+  const nutr=sumNutr(recipes);
+  const rcUsed=d.soup?.r?.rc;
+  return `
+<div class="day-card">
+  <div class="day-hdr ${rcUsed?'rc':'rg'}">
+    <div class="day-name">${d.day}</div>
+    <div class="day-badge">${rcUsed?'🍲 RSY-2使用':'🍳 通常調理'} · ${dishCount}品</div>
+  </div>
+  <div class="dish-list">
+    <div class="dish-row"><span class="dish-cat main">主菜</span>
+      <div class="dish-name-wrap"><div class="dish-name">${d.main.r.emoji} ${d.main.r.name}</div><div class="dish-sub">⏱️ 約${d.main.r.time}分</div></div>
+    </div>
+    <div class="dish-row"><span class="dish-cat side">副菜①</span>
+      <div class="dish-name-wrap"><div class="dish-name">${d.side1.r.emoji} ${d.side1.r.name}</div><div class="dish-sub">⏱️ 約${d.side1.r.time}分</div></div>
+    </div>
+    <div class="dish-row"><span class="dish-cat side">副菜②</span>
+      <div class="dish-name-wrap"><div class="dish-name">${d.side2.r.emoji} ${d.side2.r.name}</div><div class="dish-sub">⏱️ 約${d.side2.r.time}分</div></div>
+    </div>
+    ${d.soup?`<div class="dish-row"><span class="dish-cat soup">汁物</span>
+      <div class="dish-name-wrap"><div class="dish-name">${d.soup.r.emoji} ${d.soup.r.name}</div><div class="dish-sub">⏱️ 約${d.soup.r.time}分${d.soup.r.rc?' （RSY-2）':''}</div></div>
+      ${d.soup.r.rc?'<span class="rc-icon">🍲 RSY-2</span>':''}
+    </div>`:''}
+  </div>
+  <div class="nutr-bar">
+    ${renderNutrBar('kcal',nutr.kcal,GOAL.kcal.min,GOAL.kcal.max)}
+    ${renderNutrBar('たんぱく質',nutr.prot,GOAL.prot.min,GOAL.prot.max)}
+    ${renderNutrBar('糖質',nutr.carb,GOAL.carb.min,GOAL.carb.max)}
+    ${renderNutrBar('食塩',nutr.salt,GOAL.salt.min,GOAL.salt.max)}
+    <div style="font-size:.62rem;color:var(--muted);text-align:right">目標：kcal 350-500 / たんぱく質 30-45g / 糖質 100-120g / 食塩 3-5g</div>
+  </div>
+  ${uniqueUsed.length?`<div class="used-wrap">${uniqueUsed.map(u=>`<span class="used-tag">✓ ${u}</span>`).join('')}</div>`:''}
+  <button class="expand-btn" id="eb-${i}" onclick="toggleDetail(${i})">▼ レシピをすべて見る</button>
+  <div class="detail" id="det-${i}">
+    ${renderDetailDish(d.main.r,'main',false,i,'main')}
+    ${renderDetailDish(d.side1.r,'side',false,i,'side1')}
+    ${renderDetailDish(d.side2.r,'side',false,i,'side2')}
+    ${d.soup?renderDetailDish(d.soup.r,'soup',d.soup.r.rc,i,'soup'):''}
+  </div>
+</div>`;
+}
+
+function renderDetailDish(r,cls,isRc,dayIdx,part){
+  const labels={main:'🍽️ 主菜',side:'🥗 副菜',soup:'🍵 汁物'};
+  const regenFn=part==='main'?`regenMain(${dayIdx})`:part==='side1'?`regenSide(${dayIdx},1)`:part==='side2'?`regenSide(${dayIdx},2)`:`regenSoup(${dayIdx})`;
+  return `
+<div class="detail-dish">
+  <div class="detail-dish-hdr">
+    <span class="dish-cat ${cls}">${labels[cls]}</span>
+    <span class="detail-dish-name">${r.emoji} ${r.name}</span>
+    ${isRc?'<span class="rc-icon">🍲 RSY-2</span>':''}
+  </div>
+  <div style="font-size:.75rem;color:var(--muted);margin-bottom:.35rem">kcal ${r.kcal} / たんぱく質 ${r.prot}g / 糖質 ${r.carb}g / 食塩 ${r.salt}g</div>
+  <div class="detail-sec">材料（1人分）</div>
+  <div class="detail-ings">${r.keys.join(' ／ ')} ／ ${r.cond.join(' ／ ')}</div>
+  <div class="detail-sec">作り方</div>
+  <ul class="steps">${r.steps.map((s,si)=>`<li class="step"><div class="sn ${isRc&&cls==='soup'?'rc':cls}">${si+1}</div><div>${s}</div></li>`).join('')}</ul>
+  <button class="btn btn-outline regen-btn" onclick="${regenFn}">🔀 この料理を変更する</button>
+</div>`;
+}
+
+function toggleDetail(i){const d=document.getElementById(`det-${i}`);const b=document.getElementById(`eb-${i}`);const open=d.classList.toggle('open');b.textContent=open?'▲ 閉じる':'▼ レシピをすべて見る';}
+</script>
+</body>
+</html>
